@@ -1,0 +1,30 @@
+{
+  "name": "microforge",
+  "version": "1.0.0",
+  "description": "世界顶级微型 LLM 工程栈：RMSNorm + RoPE + GQA + SwiGLU + FlashAttention-2 + Muon，单文件零依赖，11 条硬不变量自检，浏览器内可训练可推理",
+  "type": "module",
+  "main": "src/forge.js",
+  "author": "晨星",
+  "license": "MIT",
+  "keywords": [
+    "llm",
+    "transformer",
+    "muon",
+    "flash-attention",
+    "gqa",
+    "rope",
+    "swiglu",
+    "bpe",
+    "autodiff",
+    "zero-dependency"
+  ],
+  "scripts": {
+    "test": "node tests/invariants.js",
+    "train": "node train.mjs",
+    "build": "node build.mjs",
+    "demo": "node build.mjs && node -e \"console.log('open index.html')\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

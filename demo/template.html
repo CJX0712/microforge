@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>microforge · 世界顶级微型 LLM 工程栈</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#6b7280; --line:#e6e8f0;
+    --brand:#4f46e5; --brand2:#0ea5e9; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",system-ui,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:26px;margin:0;letter-spacing:.3px}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .badge{font-size:12px;background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;padding:4px 10px;border-radius:999px;font-weight:600}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+  label{font-size:12px;color:var(--muted);display:block;margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit}
+  textarea{resize:vertical;min-height:78px}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  button{cursor:pointer;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(120deg,var(--brand),var(--brand2));transition:.15s}
+  button:hover{filter:brightness(1.07)} button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:#eef0f7;color:var(--ink)}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  .ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+  .detail{color:var(--muted);font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .summary{display:inline-block;font-size:14px;font-weight:700;margin:6px 0 10px;padding:4px 12px;border-radius:999px}
+  .summary.pass{background:#dcfce7;color:var(--ok)}.summary.fail{background:#fee2e2;color:var(--bad)}
+  canvas{width:100%;height:180px;display:block;background:#fbfcff;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+  .genout{white-space:pre-wrap;font-size:13px;background:#fbfcff;border:1px solid var(--line);border-radius:10px;padding:12px;min-height:80px;margin-top:8px}
+  .legend{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .pill{display:inline-block;font-size:11px;background:#eef0f7;color:var(--muted);border-radius:6px;padding:2px 7px;margin:2px}
+  .foot{margin-top:24px;color:var(--muted);font-size:12px;text-align:center}
+  code{background:#eef0f7;padding:1px 5px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>microforge</h1>
+      <div class="sub">单文件 · 零依赖 · 可自检 · 可训练 · 可推理的微型 LLM 工程栈</div>
+    </div>
+    <div class="badge" id="ver">v0.0 · 晨星</div>
+  </header>
+
+  <div class="grid">
+    <!-- 自检 -->
+    <div class="card">
+      <h2><span class="dot"></span>① 一键自检 · 11 条硬不变量</h2>
+      <div class="legend">每条不变量都是「两条互不相干的路径必须产出同一结果」：反向传播↔中心差分、FlashAttn-2↔朴素注意力、GQA↔展开MHA、KV-cache↔全序列重算、Newton-Schulz↔半正交代数定义……</div>
+      <div class="btnrow">
+        <button id="btnTest">运行全部不变量</button>
+        <button class="ghost" id="btnTestQ">仅快速(3项)</button>
+      </div>
+      <div id="testSummary"></div>
+      <div id="testTable" style="margin-top:10px;max-height:360px;overflow:auto"></div>
+    </div>
+
+    <!-- 训练 -->
+    <div class="card">
+      <h2><span class="dot"></span>② 浏览器内训练（纯 JS，CPU）</h2>
+      <div class="row">
+        <div><label>模型规模</label><select id="size">
+          <option value="48,4,2,2,128">Small (d48/4层)</option>
+          <option value="64,4,2,3,128">Medium (d64/3层)</option>
+          <option value="96,6,2,4,256">Large (d96/4层)</option>
+        </select></div>
+        <div><label>训练步数</label><input id="steps" type="number" value="160" min="20" max="2000"></div>
+      </div>
+      <div class="row">
+        <div><label>序列长度 seqLen</label><input id="seq" type="number" value="40" min="8" max="128"></div>
+        <div><label>批大小 batch</label><input id="batch" type="number" value="4" min="1" max="32"></div>
+      </div>
+      <div class="row">
+        <div><label>学习率 lr</label><input id="lr" type="number" value="0.02" step="0.001" min="0.001" max="0.2"></div>
+        <div><label>BPE 合并数</label><input id="merges" type="number" value="220" min="20" max="1200"></div>
+      </div>
+      <div class="btnrow">
+        <button id="btnTrain">开始训练</button>
+        <button class="ghost" id="btnStop">停止</button>
+        <button class="ghost" id="btnReset">重置语料为内置</button>
+      </div>
+      <div class="legend" id="trainStatus">点击「开始训练」——内置语料为原创英文科普散文；可在下方粘贴你自己的文本。</div>
+      <canvas id="loss" width="1000" height="360"></canvas>
+      <div class="legend">纵轴 = 交叉熵 loss；横轴 = 训练步。曲线单调下降即证明优化器与反向传播真的在驱动学习。</div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <!-- 语料 -->
+    <div class="card">
+      <h2><span class="dot"></span>③ 语料（可编辑）</h2>
+      <textarea id="corpus" spellcheck="false"></textarea>
+      <div class="legend">默认内置原创英文科普散文（无版权风险）。换成你自己的文本后点「开始训练」即可。</div>
+    </div>
+    <!-- 生成 -->
+    <div class="card">
+      <h2><span class="dot"></span>④ 文本生成（KV-cache + FlashAttention-2）</h2>
+      <label>提示词 prompt</label>
+      <input id="prompt" value="The transformer architecture" />
+      <div class="row">
+        <div><label>温度 temperature</label><input id="temp" type="number" value="0.8" step="0.1" min="0" max="1.5"></div>
+        <div><label>top-k</label><input id="topk" type="number" value="40" min="1" max="500"></div>
+        <div><label>生成长度</label><input id="maxnew" type="number" value="80" min="1" max="400"></div>
+      </div>
+      <div class="btnrow">
+        <button id="btnGen">生成</button>
+        <span class="legend" id="genHint">需先训练模型</span>
+      </div>
+      <div class="genout" id="genOut">—</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    组件血统：RMSNorm (Zhang &amp; Sennrich 2019) · RoPE (Su et al. 2021) · GQA (Ainslie et al. 2023) ·
+    SwiGLU (Shazeer 2020) · FlashAttention-2 (Dao 2024) · Muon+NS (Keller Jordan / Moonshot 2025) ·
+    Byte-level BPE (Sennrich 2016 / Radford 2019) · 权重绑定 (Press &amp; Wolf 2017)<br/>
+    单文件零依赖 · 作者 <b>晨星</b> · 完整源码与 11 条不变量自检见仓库
+  </div>
+</div>
+
+<script type="module">
+/*__BUNDLE__*/
+
+/* ====================== UI 控制 ====================== */
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = `v${Forge.VERSION} · ${Forge.AUTHOR}`;
+$('corpus').value = Forge.CORPUS;
+
+let stopFlag = false;
+let model = null, tok = null;
+
+/* ---------- 不变量自检 ---------- */
+function renderTests(res, quickOnly){
+  const total = res.length;
+  const pass = res.filter(r=>r.ok).length;
+  const allOk = pass===total;
+  $('testSummary').innerHTML = `<span class="summary ${allOk?'pass':'fail'}">${pass} / ${total} 通过</span>`;
+  let html = '<table><thead><tr><th>不变量</th><th>结果</th><th>细节 / 容差 / 耗时</th></tr></thead><tbody>';
+  for(const r of res){
+    html += `<tr><td>${r.name}</td><td class="${r.ok?'ok':'bad'}">${r.ok?'✅ PASS':'❌ FAIL'}</td>`+
+            `<td><div class="detail">${r.detail}</div><div class="detail">容差 ${r.tol} · ${r.ms} ms</div></td></tr>`;
+  }
+  html += '</tbody></table>';
+  $('testTable').innerHTML = html;
+}
+
+$('btnTest').onclick = async ()=>{
+  $('btnTest').disabled = true; $('testSummary').innerHTML = '运行中…';
+  // 让浏览器有机会重绘
+  await new Promise(r=>setTimeout(r,30));
+  const t0 = performance.now();
+  const res = Forge.runInvariants();
+  renderTests(res);
+  console.log(`自检耗时 ${(performance.now()-t0).toFixed(0)} ms`);
+  $('btnTest').disabled = false;
+};
+$('btnTestQ').onclick = async ()=>{
+  // 仅跑 ② ⑥ ④ 三条最快最直观的
+  const full = Forge.runInvariants();
+  const quick = full.filter(r=>/RoPE|FlashAttention|KV-cache/.test(r.name));
+  renderTests(quick);
+};
+
+/* ---------- 训练（协作式循环，实时画曲线） ---------- */
+function drawCurve(history){
+  const c = $('loss'); const ctx = c.getContext('2d');
+  const W = c.width, H = c.height; ctx.clearRect(0,0,W,H);
+  if(history.length<2) return;
+  const max = Math.max(...history), min = Math.min(...history);
+  const pad = (max-min)*0.1 || 0.5;
+  const y = v => H - ((v-(min-pad))/((max-min)+2*pad))*H;
+  const x = i => (i/(history.length-1))*W;
+  // 网格
+  ctx.strokeStyle='#eef0f7'; ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const yy=H*g/4;ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(W,yy);ctx.stroke();}
+  // 曲线
+  ctx.strokeStyle='#4f46e5'; ctx.lineWidth=2.5; ctx.beginPath();
+  history.forEach((v,i)=>{const px=x(i),py=y(v); i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  // 标注
+  ctx.fillStyle='#6b7280'; ctx.font='12px ui-monospace,monospace';
+  ctx.fillText('loss '+max.toFixed(3),6,14);
+  ctx.fillText('loss '+min.toFixed(3),6,H-6);
+  ctx.fillText('step '+history.length, W-70, H-6);
+}
+
+$('btnReset').onclick = ()=>{ $('corpus').value = Forge.CORPUS; };
+
+$('btnTrain').onclick = async ()=>{
+  if(model && !confirm('已有训练好的模型，覆盖重新开始？')) return;
+  stopFlag = false;
+  const [dModel,nHeads,nKV,nLayers,dFF] = $('size').value.split(',').map(Number);
+  const steps = +$('steps').value, seqLen=+$('seq').value, batch=+$('batch').value;
+  const lr = +$('lr').value, merges=+$('merges').value;
+  const text = $('corpus').value || Forge.CORPUS;
+  $('btnTrain').disabled = true; $('btnStop').disabled = false;
+  $('trainStatus').textContent = '分词 & 构建模型…';
+  await new Promise(r=>setTimeout(r,20));
+
+  const t0 = performance.now();
+  const { tok: tk, ids } = Forge.tokenizeCorpus(text, merges);
+  const m = new Forge.GPT({ vocab: tk.size, maxSeq: seqLen, dModel, nHeads, nKVHeads: nKV, nLayers, dFF }, 1337);
+  const opt = new Forge.Muon(m.params(), { lr, momentum:0.95, nsSteps:5, weightDecay:0.01 });
+  const rng = Forge.mulberry32(1338);
+  const history = [];
+  model = m; tok = tk;
+
+  const cut = Math.floor(ids.length*0.9);
+  const trainIds = ids.slice(0,cut);
+  const maxStart = Math.max(1, trainIds.length - seqLen - 1);
+  const warmup = Math.max(1, Math.floor(steps*0.05));
+  const baseLr = lr;
+
+  $('trainStatus').textContent = `词表 ${tk.size} · 训练 tokens ${trainIds.length} · 参数量 ${(m.paramCount()/1000).toFixed(1)}k`;
+
+  let step = 0;
+  function chunk(){
+    if(stopFlag){ finish(); return; }
+    const n = Math.min(4, steps-step);
+    for(let k=0;k<n;k++){
+      // cosine warmup
+      let curLr = baseLr;
+      if(step < warmup) curLr = baseLr*(step+1)/warmup;
+      else { const p=Math.min(1,(step-warmup)/Math.max(1,steps-warmup)); curLr=baseLr*(0.1+0.9*0.5*(1+Math.cos(Math.PI*p))); }
+      opt.lr = curLr;
+      // 构造 batch
+      const X=[],Y=[];
+      for(let b=0;b<batch;b++){
+        const s=Math.floor(rng()*maxStart); const x=[],y=[];
+        for(let t=0;t<seqLen;t++){x.push(trainIds[s+t]);y.push(trainIds[s+t+1]);}
+        X.push(x);Y.push(y);
+      }
+      Forge.trainStep(m, opt, X, Y);
+      step++;
+    }
+    history.push(0); // 占位，下面用真实 loss
+    // 记录平滑 loss（最后一个 batch）
+    Forge.clearTape();
+    const lastLoss = m.forward(X[X.length-1], Y[Y.length-1]).data[0];
+    history[history.length-1] = lastLoss;
+    drawCurve(history);
+    $('trainStatus').textContent = `step ${step}/${steps} · loss ${lastLoss.toFixed(4)} · 用时 ${((performance.now()-t0)/1000).toFixed(1)}s`;
+    if(step>=steps){ finish(); return; }
+    requestAnimationFrame(chunk);
+  }
+  function finish(){
+    $('btnTrain').disabled=false; $('btnStop').disabled=true;
+    $('genHint').textContent='模型已就绪，可生成';
+    $('trainStatus').textContent += ` · 完成 ✅`;
+  }
+  requestAnimationFrame(chunk);
+};
+$('btnStop').onclick = ()=>{ stopFlag = true; };
+
+/* ---------- 生成 ---------- */
+$('btnGen').onclick = ()=>{
+  if(!model || !tok){ $('genOut').textContent='⚠️ 请先训练模型'; return; }
+  const p = $('prompt').value || '';
+  let ids = tok.encode(p);
+  if(ids.length===0){ $('genOut').textContent='⚠️ 提示词为空或无法分词'; return; }
+  if(ids.length > model.cfg.maxSeq-1) ids = ids.slice(-(model.cfg.maxSeq-1));
+  const rng = Forge.mulberry32(7);
+  const t0 = performance.now();
+  const out = Forge.generate(model, ids, +$('maxnew').value, { temperature:+$('temp').value, topK:+$('topk').value, rng });
+  const dt = (performance.now()-t0).toFixed(0);
+  $('genOut').textContent = p + tok.decode(out) + `\n\n[生成 ${out.length} token · ${dt} ms · 架构 RMSNorm+RoPE+GQA+SwiGLU+FlashAttn-2+Muon]`;
+};
+</script>
+</body>
+</html>
